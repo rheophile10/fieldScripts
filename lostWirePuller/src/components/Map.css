@@ -1,0 +1,38 @@
+/* styles/map.css */
+.map-container {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  margin-left: 60px;
+  transition: margin-left 0.3s ease;
+}
+
+.error-message,
+.loading-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  font-size: 18px;
+  color: #666;
+}
+
+.position-info {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .map-container {
+    margin-left: 50px;
+  }
+}
