@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Test Consolidator Script",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/consolidator.py",
+            "args": [
+                "--input",
+                "./26-Aug-25",
+                "--output",
+                "Aug26.gpx",
+                "--filter-date",
+                "2025-08-26",
+                "--start-time",
+                "06:00",
+                "--end-time",
+                "20:00"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        }
+    ]
+}
