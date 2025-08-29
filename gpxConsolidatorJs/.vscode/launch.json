@@ -1,0 +1,36 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run GPX Consolidator",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/index.js",
+            "args": [
+                "--filter-date", "2025-08-20",
+                "--start-time", "06:00", 
+                "--end-time", "20:00",
+                "--input", "./gpx_files",
+                "--output", "./consolidated.gpx"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "name": "Run GPX Consolidator (No Filters)",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/index.js",
+            "args": [
+                "--input", "./gpx_files",
+                "--output", "./consolidated.gpx"
+            ],
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        }
+    ]
+}
