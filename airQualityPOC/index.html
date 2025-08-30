@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northern Saskatchewan Air Quality Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .api-setup {
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid #ff6b6b;
+        }
+        
+        .api-setup h3 {
+            color: #d63031;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .input-group input {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .custom-coords {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .coord-inputs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .coord-inputs input {
+            width: 120px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+        }
+        
+        .results {
+            margin-top: 30px;
+        }
+        
+        .location-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-left: 5px solid #667eea;
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .location-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .location-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2d3436;
+        }
+        
+        .coordinates {
+            color: #636e72;
+            font-size: 0.9em;
+        }
+        
+        .air-quality-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .air-quality-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+        }
+        
+        .air-quality-item.pm25 {
+            background: linear-gradient(135deg, #fd79a8, #e84393);
+        }
+        
+        .air-quality-item.aqi {
+            background: linear-gradient(135deg, #fdcb6e, #e17055);
+        }
+        
+        .air-quality-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .air-quality-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .pollutants {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .pollutant {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .pollutant-name {
+            font-weight: bold;
+            color: #495057;
+            font-size: 0.8em;
+        }
+        
+        .pollutant-value {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .error {
+            background: linear-gradient(135deg, #ff7675, #d63031);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #667eea;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .timestamp {
+            color: #636e72;
+            font-size: 0.9em;
+            margin-top: 10px;
+            text-align: right;
+        }
+        
+        .aqi-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+        
+        .aqi-1 { background-color: #00e400; }
+        .aqi-2 { background-color: #ffff00; }
+        .aqi-3 { background-color: #ff7e00; }
+        .aqi-4 { background-color: #ff0000; }
+        .aqi-5 { background-color: #8f3f97; }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2em; }
+            .controls { grid-template-columns: 1fr; }
+            .air-quality-grid { grid-template-columns: 1fr 1fr; }
+            .location-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌫️ Air Quality Monitor</h1>
+            <p>Real-time PM2.5 and air pollution data for remote locations</p>
+        </div>
+        
+        <div class="content">
+            <div class="api-setup">
+                <h3>🔑 API Setup</h3>
+                <p>Enter your OpenWeatherMap API key to get started. <a href="https://openweathermap.org/api" target="_blank">Get a free API key here</a></p>
+                <div class="input-group">
+                    <input type="text" id="apiKey" placeholder="Enter your OpenWeatherMap API key here...">
+                    <button onclick="saveApiKey()">💾 Save Key</button>
+                </div>
+                <p><small>Your API key is stored locally in your browser and never sent anywhere except OpenWeatherMap.</small></p>
+            </div>
+            
+            <div class="controls">
+                <button onclick="quickTest()" id="quickTestBtn">🚀 Quick Test (La Ronge)</button>
+                <button onclick="testAllLocations()" id="testAllBtn">🧪 Test All Locations</button>
+                <button onclick="clearResults()">🗑️ Clear Results</button>
+            </div>
+            
+            <div class="custom-coords">
+                <h3>📍 Custom Coordinates</h3>
+                <div class="coord-inputs">
+                    <input type="number" id="customLat" placeholder="Latitude" step="0.0001" value="55.1001">
+                    <input type="number" id="customLon" placeholder="Longitude" step="0.0001" value="-105.2842">
+                    <input type="text" id="customName" placeholder="Location Name" value="Custom Location">
+                    <button onclick="testCustomCoords()">📊 Test Coordinates</button>
+                </div>
+            </div>
+            
+            <div id="results" class="results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Predefined locations in northern Saskatchewan
+        const LOCATIONS = {
+            'La Ronge': { lat: 55.1001, lon: -105.2842 },
+            'Stony Rapids': { lat: 59.2500, lon: -105.8333 },
+            'Uranium City': { lat: 59.5667, lon: -108.6167 },
+            'Buffalo Narrows': { lat: 55.8333, lon: -108.4167 },
+            'Wollaston Lake': { lat: 58.1167, lon: -103.1667 }
+        };
+
+        let API_KEY = '';
+
+        // Load API key from localStorage on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const savedKey = localStorage.getItem('openweather_api_key');
+            if (savedKey) {
+                API_KEY = savedKey;
+                document.getElementById('apiKey').value = savedKey;
+                updateButtonStates();
+            }
+        });
+
+        function saveApiKey() {
+            const keyInput = document.getElementById('apiKey');
+            API_KEY = keyInput.value.trim();
+            
+            if (API_KEY) {
+                localStorage.setItem('openweather_api_key', API_KEY);
+                showMessage('✅ API key saved successfully!', 'success');
+                updateButtonStates();
+            } else {
+                showMessage('⚠️ Please enter a valid API key', 'error');
+            }
+        }
+
+        function updateButtonStates() {
+            const buttons = ['quickTestBtn', 'testAllBtn'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.disabled = !API_KEY;
+                }
+            });
+        }
+
+        function showMessage(message, type = 'info') {
+            const results = document.getElementById('results');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'error' ? 'error' : 'location-card';
+            messageDiv.innerHTML = message;
+            results.appendChild(messageDiv);
+        }
+
+        function showLoading() {
+            const results = document.getElementById('results');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.innerHTML = '<div class="spinner"></div>Loading air quality data...';
+            results.appendChild(loadingDiv);
+        }
+
+        async function getAirPollution(lat, lon, locationName = 'Unknown') {
+            if (!API_KEY) {
+                showMessage('⚠️ Please enter your API key first!', 'error');
+                return null;
+            }
+
+            const url = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayResult(data, locationName, lat, lon);
+                    return data;
+                } else {
+                    showMessage(`❌ Error for ${locationName}: ${data.message || 'Unknown error'}`, 'error');
+                    return null;
+                }
+            } catch (error) {
+                showMessage(`❌ Network error for ${locationName}: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        function displayResult(data, locationName, lat, lon) {
+            const results = document.getElementById('results');
+            const pollution = data.list[0];
+            const components = pollution.components;
+            const timestamp = new Date(pollution.dt * 1000);
+            
+            const aqiNames = ['', 'Good', 'Fair', 'Moderate', 'Poor', 'Very Poor'];
+            const aqiName = aqiNames[pollution.main.aqi] || 'Unknown';
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'location-card';
+            
+            resultDiv.innerHTML = `
+                <div class="location-header">
+                    <div class="location-name">${locationName}</div>
+                    <div class="coordinates">${lat.toFixed(4)}, ${lon.toFixed(4)}</div>
+                </div>
+                
+                <div class="air-quality-grid">
+                    <div class="air-quality-item pm25">
+                        <div class="air-quality-value">${components.pm2_5}</div>
+                        <div class="air-quality-label">PM2.5 (µg/m³)</div>
+                    </div>
+                    <div class="air-quality-item aqi">
+                        <div class="air-quality-value">
+                            ${pollution.main.aqi}
+                            <span class="aqi-indicator aqi-${pollution.main.aqi}"></span>
+                        </div>
+                        <div class="air-quality-label">AQI - ${aqiName}</div>
+                    </div>
+                </div>
+                
+                <div class="pollutants">
+                    ${Object.entries(components).map(([key, value]) => `
+                        <div class="pollutant">
+                            <div class="pollutant-name">${key.toUpperCase()}</div>
+                            <div class="pollutant-value">${value}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="timestamp">
+                    📅 ${timestamp.toLocaleString()}
+                </div>
+            `;
+            
+            results.appendChild(resultDiv);
+        }
+
+        async function quickTest() {
+            showLoading();
+            const laRonge = LOCATIONS['La Ronge'];
+            await getAirPollution(laRonge.lat, laRonge.lon, 'La Ronge');
+        }
+
+        async function testAllLocations() {
+            showLoading();
+            
+            for (const [name, coords] of Object.entries(LOCATIONS)) {
+                await getAirPollution(coords.lat, coords.lon, name);
+                // Small delay to be respectful to the API
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        async function testCustomCoords() {
+            const lat = parseFloat(document.getElementById('customLat').value);
+            const lon = parseFloat(document.getElementById('customLon').value);
+            const name = document.getElementById('customName').value || 'Custom Location';
+            
+            if (isNaN(lat) || isNaN(lon)) {
+                showMessage('⚠️ Please enter valid latitude and longitude values', 'error');
+                return;
+            }
+            
+            showLoading();
+            await getAirPollution(lat, lon, name);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Initialize button states
+        updateButtonStates();
+    </script>
+</body>
+</html>
