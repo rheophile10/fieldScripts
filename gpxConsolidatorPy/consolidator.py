@@ -6,6 +6,11 @@ from typing import List, Tuple, Dict, Optional
 import sys
 
 GPX_NS: Dict[str, str] = {'gpx': 'http://www.topografix.com/GPX/1/1'}
+ET.register_namespace('', 'http://www.topografix.com/GPX/1/1')
+ET.register_namespace('xsi', 'http://www.w3.org/2001/XMLSchema-instance')
+ET.register_namespace('gpxx', 'http://www.garmin.com/xmlschemas/GpxExtensions/v3')
+ET.register_namespace('wptx1', 'http://www.garmin.com/xmlschemas/WaypointExtension/v1')
+ET.register_namespace('gpxtpx', 'http://www.garmin.com/xmlschemas/TrackPointExtension/v1')
 
 def generate_unique_track_name(original_name: Optional[str], filter_date: Optional[datetime.date], base_filename: str, unique_names: Dict[str, int]) -> Tuple[str, Dict[str, int]]:
     if filter_date:
@@ -26,7 +31,7 @@ def generate_unique_track_name(original_name: Optional[str], filter_date: Option
         unique_name = base_name    
     return unique_name, unique_names
 
-def generate_unique_waypoint_name(original_name: Optional[str], filter_date: Optional[datetime.date], base_filename: str, unique_names: Dict[str, int]) -> Tuple[str, Dict[str, int]]:
+def generate_unique_name(original_name: Optional[str], filter_date: Optional[datetime.date], base_filename: str, unique_names: Dict[str, int]) -> Tuple[str, Dict[str, int]]:
     if filter_date:
         date_str = filter_date.strftime("%b%d")
         if original_name:
@@ -110,57 +115,65 @@ def process_track(track: ET.Element,
         
     return filtered_track
 
-def parse_gpx_file(file_path: Path, new_gpx_root: ET.Element, unique_track_names: Dict[str, int], unique_waypoint_names: Dict[str, int],
-                filter_date: Optional[datetime.date] = None, start_time: Optional[datetime.time] = None, end_time: Optional[datetime.time] = None) -> Tuple[ET.Element, Dict[str, int], Dict[str, int]]:
+def parse_gpx_file(file_path: Path, unique_track_names: Dict[str, int], unique_waypoint_names: Dict[str, int], unique_route_names: Dict[str, int],
+                filter_date: Optional[datetime.date] = None, start_time: Optional[datetime.time] = None, end_time: Optional[datetime.time] = None) -> Tuple[List[ET.Element], List[ET.Element], List[ET.Element], Dict[str, int], Dict[str, int], Dict[str, int]]:
     base_name = file_path.stem
     gpx_root = ET.parse(file_path).getroot()
 
     tracks = gpx_root.findall('.//gpx:trk', GPX_NS)
     waypoints = gpx_root.findall('.//gpx:wpt', GPX_NS)
+    routes = gpx_root.findall('.//gpx:rte', GPX_NS)
+    new_waypoints = []
+    new_tracks = []
+    new_routes = []
 
     # note all the DRY violations :(
+
+    # gpx isn't valid unless its waypoints and then tracks
+
+    for waypoint in waypoints:
+        filtered_waypoint = process_waypoint(waypoint, filter_date, start_time, end_time)
+        original_waypoint_name = get_element_name(waypoint)
+        waypoint_name, unique_waypoint_names = generate_unique_name(original_waypoint_name, filter_date, base_name, unique_waypoint_names)
+        if filtered_waypoint is not None:
+            name_elem = filtered_waypoint.find('./gpx:name', GPX_NS)
+            if name_elem is not None:
+                name_elem.text = waypoint_name
+            else:
+                name_elem = ET.SubElement(filtered_waypoint, 'name')
+                name_elem.text = waypoint_name
+            new_waypoints.append(filtered_waypoint)
+
+    
+    for route in routes:
+        original_name = get_element_name(route)
+        route_name, unique_route_names = generate_unique_name(original_name, filter_date, base_name, unique_route_names)
+
+        name_elem = route.find('./gpx:name', GPX_NS)
+        if name_elem is not None:
+            name_elem.text = route_name
+        else:
+            name_elem = ET.SubElement(route, 'name')
+            name_elem.text = route_name
+        
+        new_routes.append(route)
 
     for track in tracks:
         original_track_name = get_element_name(track)
         track_name, unique_track_names = generate_unique_track_name(original_track_name,filter_date, base_name, unique_track_names)
         filtered_track = process_track(track, track_name, filter_date, start_time, end_time)
         if filtered_track is not None:
-            new_gpx_root.append(filtered_track)
-        
-    for waypoint in waypoints:
-        filtered_waypoint = process_waypoint(waypoint, filter_date, start_time, end_time)
-        original_waypoint_name = get_element_name(waypoint)
-        waypoint_name, unique_waypoint_names = generate_unique_waypoint_name(original_waypoint_name, filter_date, base_name, unique_waypoint_names)
-        name_elem = ET.SubElement(filtered_waypoint, 'name')
-        name_elem.text = waypoint_name
-        if filtered_waypoint is not None:
-            new_gpx_root.append(filtered_waypoint)
-        
+            new_tracks.append(filtered_track)
 
+    return new_tracks, new_waypoints, new_routes, unique_track_names, unique_waypoint_names, unique_route_names
 
-    return new_gpx_root, unique_track_names, unique_waypoint_names
-    
 def create_new_gpx(name: str = 'Consolidated GPX Tracks and Waypoints') -> ET.Element:
     root = ET.Element('gpx')
     
-    root.set('xmlns', 'http://www.topografix.com/GPX/1/1')
-    root.set('xmlns:gpxx', 'http://www.garmin.com/xmlschemas/GpxExtensions/v3')
-    root.set('xmlns:gpxtrkx', 'http://www.garmin.com/xmlschemas/TrackStatsExtension/v1')
-    root.set('xmlns:wptx1', 'http://www.garmin.com/xmlschemas/WaypointExtension/v1')
-    root.set('xmlns:gpxtpx', 'http://www.garmin.com/xmlschemas/TrackPointExtension/v1')
-    root.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-    
-    root.set('creator', 'GPSMAP 64st')
+    root.set('creator', 'MapSource 6.16.3')
     root.set('version', '1.1')
-    
-    schema_location = (
-        'http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd '
-        'http://www.garmin.com/xmlschemas/GpxExtensions/v3 http://www8.garmin.com/xmlschemas/GpxExtensionsv3.xsd '
-        'http://www.garmin.com/xmlschemas/TrackStatsExtension/v1 http://www8.garmin.com/xmlschemas/TrackStatsExtension.xsd '
-        'http://www.garmin.com/xmlschemas/WaypointExtension/v1 http://www8.garmin.com/xmlschemas/WaypointExtensionv1.xsd '
-        'http://www.garmin.com/xmlschemas/TrackPointExtension/v1 http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd'
-    )
-    root.set('xsi:schemaLocation', schema_location)
+    root.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
+    root.set('xsi:schemaLocation', 'http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd')
     
     metadata = ET.SubElement(root, 'metadata')
     
@@ -183,10 +196,28 @@ def create_consolidated_gpx(gpx_files: List[Path], output_file:Path, filter_date
 
     unique_track_names: Dict[str, int] = {}
     unique_waypoint_names: Dict[str, int] = {}
+    unique_route_names: Dict[str, int] = {}
+    tracks = []
+    waypoints = []
+    routes = []
 
     for gpx_file in gpx_files:
-        new_gpx_root, unique_track_names, unique_waypoint_names = parse_gpx_file(gpx_file, new_gpx_root, unique_track_names, unique_waypoint_names, filter_date, start_time, end_time)
-        
+        new_tracks, new_waypoints, new_routes, unique_track_names, unique_waypoint_names, unique_route_names = parse_gpx_file(gpx_file, unique_track_names, unique_waypoint_names, unique_route_names, filter_date, start_time, end_time)
+        tracks.extend(new_tracks)
+        waypoints.extend(new_waypoints)
+        routes.extend(new_routes)
+
+    # order of waypoints and tracks in the file actually matters (waypoints, routes, tracks) - if you do it wrong mapsource wont open it
+
+    for waypoint in waypoints:
+        new_gpx_root.append(waypoint)
+
+    for route in routes:
+        new_gpx_root.append(route)
+
+    for track in tracks:
+        new_gpx_root.append(track)
+
     tree = ET.ElementTree(new_gpx_root)
 
     tree.write(output_file, encoding='utf-8', xml_declaration=True)
