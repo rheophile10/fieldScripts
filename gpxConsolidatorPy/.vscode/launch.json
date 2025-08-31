@@ -3,12 +3,12 @@
     "configurations": [
         {
             "name": "Test Consolidator Script",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/consolidator.py",
             "args": [
                 "--input",
-                "./26-Aug-25",
+                "./gpx_files",
                 "--output",
                 "Aug26.gpx",
                 "--filter-date",
@@ -17,6 +17,21 @@
                 "06:00",
                 "--end-time",
                 "20:00"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "justMyCode": true
+        },
+                {
+            "name": "consolidate without filters",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/consolidator.py",
+            "args": [
+                "--input",
+                "./gpx_files",
+                "--output",
+                "consolidated.gpx",
             ],
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",

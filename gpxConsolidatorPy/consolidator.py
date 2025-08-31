@@ -7,13 +7,16 @@ import sys
 
 GPX_NS: Dict[str, str] = {'gpx': 'http://www.topografix.com/GPX/1/1'}
 
-def generate_unique_track_name(original_name: Optional[str], filter_date: datetime.date, base_filename: str, unique_names: Dict[str, int]) -> Tuple[str, Dict[str, int]]:
-    date_str = filter_date.strftime("%b%d")
-    # if original_name:
-    #     base_name = f"{base_filename}_{date_str}_{original_name}"
-    # else:
-    #     base_name = f"{base_filename}_{date_str}"
-    base_name = f"{base_filename}_{date_str}"
+def generate_unique_track_name(original_name: Optional[str], filter_date: Optional[datetime.date], base_filename: str, unique_names: Dict[str, int]) -> Tuple[str, Dict[str, int]]:
+    if filter_date:
+        date_str = filter_date.strftime("%b%d")
+        # if original_name:
+        #     base_name = f"{base_filename}_{date_str}_{original_name}"
+        # else:
+        #     base_name = f"{base_filename}_{date_str}"
+        base_name = f"{base_filename}_{date_str}"
+    else:
+        base_name = original_name
     if base_name in unique_names:
         counter = unique_names[base_name] + 1
         unique_names[base_name] = counter
@@ -23,13 +26,16 @@ def generate_unique_track_name(original_name: Optional[str], filter_date: dateti
         unique_name = base_name    
     return unique_name, unique_names
 
-def generate_unique_waypoint_name(original_name: Optional[str], filter_date: datetime.date, base_filename: str, unique_names: Dict[str, int]) -> Tuple[str, Dict[str, int]]:
-    date_str = filter_date.strftime("%b%d")
-    if original_name:
-        base_name = f"{base_filename}_{date_str}_{original_name}"
-    else:
+def generate_unique_waypoint_name(original_name: Optional[str], filter_date: Optional[datetime.date], base_filename: str, unique_names: Dict[str, int]) -> Tuple[str, Dict[str, int]]:
+    if filter_date:
+        date_str = filter_date.strftime("%b%d")
+        if original_name:
+            base_name = f"{base_filename}_{date_str}_{original_name}"
+        else:
+            base_name = f"{base_filename}_{date_str}"
         base_name = f"{base_filename}_{date_str}"
-    base_name = f"{base_filename}_{date_str}"
+    else: 
+        base_name = original_name
     if base_name in unique_names:
         counter = unique_names[base_name] + 1
         unique_names[base_name] = counter
@@ -89,12 +95,13 @@ def process_track(track: ET.Element,
             point_time = datetime.datetime.fromisoformat(time_elem.text.replace('Z', '+00:00'))
             point_time = point_time.astimezone()
 
-            if point_time.date() != filter_date:
+            if filter_date is not None and point_time.date() != filter_date:
                 continue
-
-            point_time_only = point_time.time()
-            if point_time_only < start_time or point_time_only > end_time:
-                continue
+            
+            if start_time is not None and end_time is not None:
+                point_time_only = point_time.time()
+                if point_time_only < start_time or point_time_only > end_time:
+                    continue
                 
             new_segment.append(point)
         

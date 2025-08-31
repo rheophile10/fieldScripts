@@ -5,6 +5,10 @@ python consolidator.py --input ./26-Aug-25 --output Aug26.gpx --filter-date 2025
 ```
 # TODO
 
+- [ ] consolidate routes too
 - [ ] test waypoints consolidation (it should work ...) 
 - [ ] track colours would be nice
 - [ ] it would be cool to have routes and route filtering algo
+
+# features
+- filters tracks on time and date or just consolidates them
