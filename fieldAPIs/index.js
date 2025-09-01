@@ -1,5 +1,5 @@
-const { WeatherAPI } = require('./weatherapi');
-const { OPEN_WEATHER_API_KEY } = require('./key');
+const { WeatherAPI } = require('./openWeather');
+const { OPEN_WEATHER_API_KEY } = require('./keys');
 
 const DEFAULT_LAT = 45.5017;
 const DEFAULT_LON = -73.5673;
