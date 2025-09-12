@@ -8,13 +8,20 @@
     "dev": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["weather", "api", "openweathermap", "forecast", "air-quality"],
+  "keywords": [
+    "weather",
+    "api",
+    "openweathermap",
+    "forecast",
+    "air-quality"
+  ],
   "author": "rheophile10",
   "license": "ISC",
   "dependencies": {
     "node-fetch": "^3.3.2"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
   }
 }
